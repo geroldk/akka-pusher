@@ -116,7 +116,7 @@ object PusherModels extends PusherJsonSupport {
  */
     userInfo: Option[T] = None)(implicit writer: JsonFormat[T])
   object ChannelData {
-    def apply(userId: String) = new ChannelData[JsValue](userId)
+    def apply(userId: String): ChannelData[JsValue] = new ChannelData[JsValue](userId)
   }
 
   implicit def channelDataJsonFormatSupport[T](implicit writer: JsonFormat[T]): JsonFormat[ChannelData[T]] = new JsonFormat[ChannelData[T]] {

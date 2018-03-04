@@ -1,21 +1,23 @@
 package com.github.dtaniwaki.akka_pusher
 
-import akka.actor.{ ActorSystem, Props }
+import akka.actor.{ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.github.dtaniwaki.akka_pusher.attributes.{ PusherChannelAttributes, PusherChannelsAttributes }
+import com.github.dtaniwaki.akka_pusher.attributes.{PusherChannelAttributes, PusherChannelsAttributes}
 import com.typesafe.config.ConfigFactory
 import com.github.dtaniwaki.akka_pusher.PusherMessages._
 import com.github.dtaniwaki.akka_pusher.PusherModels._
 import org.specs2.mock.Mockito
+import org.specs2.mock.mockito.MockitoMatchers
 import org.specs2.mutable.Specification
 import org.specs2.specification.process.RandomSequentialExecution
 import spray.json._
+
 import scala.collection.mutable.Queue
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-import scala.util.Success
+import scala.concurrent.{Await, Future}
+import scala.util.{Success, Try}
 
 class TestActor(_pusher: PusherClient) extends PusherActor() {
   override val pusher = _pusher
@@ -39,13 +41,13 @@ class PusherActorSpec extends Specification
     "with TriggerMessage" in {
       "returns Result" in {
         val pusher = mock[PusherClient].smart
-        pusher.trigger(anyString, anyString, any, any)(any) returns Future(Success(Result("")))
+        pusher.trigger(anyString, anyString, MockitoMatchers.any(), any())(any()) returns Future(Success(Result("")))
         val actorRef = system.actorOf(Props(classOf[TestActor], pusher))
 
         try {
           val future = actorRef ? TriggerMessage("channel1", "event", JsString("message"), Some("123.234"))
           awaitResult(future) === Success(Result(""))
-          there was one(pusher).trigger(anyString, anyString, any, any)(any)
+          there was one(pusher).trigger(anyString, anyString, any(), any())(any())
         } finally {
           system.stop(actorRef)
         }
@@ -54,7 +56,7 @@ class PusherActorSpec extends Specification
     "with Seq[TriggerMessage]" in {
       "enqueue the message" in {
         val pusher = mock[PusherClient].smart
-        pusher.trigger(any)(any) returns Future(Success(Result("")))
+        pusher.trigger(any())(any()) returns Future(Success(Result("")))
         val actorRef = system.actorOf(Props(classOf[TestActor], pusher))
 
         try {
@@ -63,8 +65,8 @@ class PusherActorSpec extends Specification
             TriggerMessage("channel2", "event2", JsString("message2"), Some("123.234"))
           )
           val future = actorRef ? messages
-          awaitResult(future) === Seq(Success(Result("")))
-          there was one(pusher).trigger(===(messages.map(TriggerMessage.unapply(_).get)))(any)
+          awaitResult(future.mapTo[Iterator[Try[PusherModels.Result]]].map(_.toSeq)) === Seq(Success(Result("")))
+          there was one(pusher).trigger(===(messages.map(TriggerMessage.unapply(_).get)))(any())
         } finally {
           system.stop(actorRef)
         }
@@ -73,7 +75,7 @@ class PusherActorSpec extends Specification
     "with ChannelMessage" in {
       "returns Channel" in {
         val pusher = mock[PusherClient].smart
-        pusher.channel(anyString, Seq(any)) returns Future(Success(Channel()))
+        pusher.channel(anyString, Seq(any())) returns Future(Success(Channel()))
         val actorRef = system.actorOf(Props(classOf[TestActor], pusher))
 
         try {
@@ -87,7 +89,7 @@ class PusherActorSpec extends Specification
     "with ChannelsMessage" in {
       "returns Channels" in {
         val pusher = mock[PusherClient].smart
-        pusher.channels(anyString, Seq(any)) returns Future(Success(ChannelMap()))
+        pusher.channels(anyString, Seq(any())) returns Future(Success(ChannelMap()))
         val actorRef = system.actorOf(Props(classOf[TestActor], pusher))
 
         try {
@@ -196,7 +198,7 @@ class PusherActorSpec extends Specification
       "handle the batch trigger" in {
         val pusher = mock[PusherClient].smart
         val queue = Queue[TriggerMessage]()
-        pusher.trigger(any)(any) returns Future(Success(Result("")))
+        pusher.trigger(any())(any()) returns Future(Success(Result("")))
         val messages = Seq(
           TriggerMessage("channel1", "event1", JsString("message1"), Some("123.234")),
           TriggerMessage("channel1", "event2", JsString("message2"), Some("234.345"))
@@ -208,7 +210,7 @@ class PusherActorSpec extends Specification
           actorRef ! BatchTriggerTick()
           Thread.sleep(0) // yield to other threads
           Thread.sleep(500)
-          there was one(pusher).trigger(===(messages.map(TriggerMessage.unapply(_).get)))(any)
+          there was one(pusher).trigger(===(messages.map(TriggerMessage.unapply(_).get)))(any())
           queue.dequeueAll(_ => true).length === 0
         } finally {
           system.stop(actorRef)
@@ -218,7 +220,7 @@ class PusherActorSpec extends Specification
         "handle the batch trigger in batches of 10 messages" in {
           val pusher = mock[PusherClient].smart
           val queue = Queue[TriggerMessage]()
-          pusher.trigger(any)(any) returns Future(Success(Result("")))
+          pusher.trigger(any())(any()) returns Future(Success(Result("")))
           val messages = for (n <- 0 to 12) yield TriggerMessage(s"channel${n}", s"event${n}", JsString(s"message${n}"), Some("123.234"))
           messages foreach { message => queue.enqueue(message) }
           val actorRef = system.actorOf(Props(classOf[TestBatchActor], pusher, queue))

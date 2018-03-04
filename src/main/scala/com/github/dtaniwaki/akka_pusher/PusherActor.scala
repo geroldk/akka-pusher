@@ -3,7 +3,8 @@ package com.github.dtaniwaki.akka_pusher
 import akka.actor._
 import akka.pattern.pipe
 import com.github.dtaniwaki.akka_pusher.PusherMessages._
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.collection.mutable.Queue
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -11,7 +12,7 @@ import scala.concurrent.duration._
 import org.slf4j.LoggerFactory
 import net.ceedubs.ficus.Ficus._
 
-import scala.util.{ Success, Failure }
+import scala.util.{Failure, Success, Try}
 
 class PusherActor(
     config: Config,

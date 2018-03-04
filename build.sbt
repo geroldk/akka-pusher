@@ -2,21 +2,23 @@ organization := "com.github.dtaniwaki"
 
 name := "akka-pusher"
 
-scalaVersion := "2.11.7"
-crossScalaVersions := Seq("2.11.7")
+scalaVersion := "2.12.4"
+crossScalaVersions := Seq("2.12.4")
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 
-val akkaV = "2.4.9"
-val specs2V = "3.6.4"
+val akkaV = "2.5.10"
+val specs2V = "4.0.2"
 
 val developmentDependencies = Seq(
   "com.typesafe.akka"       %%  "akka-actor"                        % akkaV,
-  "com.typesafe.akka"       %%  "akka-http-core"                    % akkaV,
-  "com.typesafe.akka"       %%  "akka-http-spray-json-experimental" % akkaV,
-  "com.github.nscala-time"  %%  "nscala-time"                       % "2.2.0",
+  "com.typesafe.akka"       %%  "akka-http"                    % "10.0.11",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.0-RC2",
+  "com.typesafe.akka" %% "akka-stream" % akkaV,
+  //  "com.typesafe.akka"       %%  "akka-http-spray-json-experimental" % akkaV,
+  "com.github.nscala-time"  %%  "nscala-time"                       % "2.18.0",
   "org.slf4j"               %   "slf4j-api"                         % "1.7.12",
-  "net.ceedubs"             %%  "ficus"                             % "1.1.2"
+  "com.iheart"              %%  "ficus"                             % "1.4.3"
 )
 val testDependencies = Seq(
   "com.typesafe.akka"   %%  "akka-testkit"  % akkaV % "test",
@@ -29,9 +31,9 @@ libraryDependencies ++= developmentDependencies ++ testDependencies
 
 fork in Test := true
 parallelExecution in Test := true
-javaOptions in Test ++= Seq(
-  s"-Djava.util.Arrays.useLegacyMergeSort=true"
-)
+//javaOptions in Test ++= Seq(
+//  s"-Djava.util.Arrays.useLegacyMergeSort=true"
+//)
 
 publishArtifact in Test := false
 publishMavenStyle := true
